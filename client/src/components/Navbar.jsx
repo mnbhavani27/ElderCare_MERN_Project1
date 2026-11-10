@@ -1,0 +1,2 @@
+import {Link,useNavigate} from 'react-router-dom';
+export default function Navbar(){const nav=useNavigate();const user=JSON.parse(localStorage.getItem('eldercare_user')||'null');const logout=()=>{localStorage.clear();nav('/login');};return <header className="topbar"><Link className="brand" to="/">💙 ElderCare</Link><nav>{user?<><span className="welcome">Hi, {user.name}</span><button className="linkbtn" onClick={logout}>Logout</button></>:<><Link to="/login">Login</Link><Link to="/register" className="navbtn">Register</Link></>}</nav></header>}

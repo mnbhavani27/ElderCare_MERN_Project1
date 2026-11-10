@@ -1,0 +1,11 @@
+import express from 'express';
+import AssistanceRequest from '../models/AssistanceRequest.js';
+import {auth,role} from '../middleware/authMiddleware.js';
+const router=express.Router();
+router.post('/',auth,role('senior'),async(req,res)=>{try{const r=await AssistanceRequest.create({...req.body,userId:req.user._id});res.status(201).json(r);}catch(e){res.status(400).json({message:e.message});}});
+router.get('/my',auth,role('senior'),async(req,res)=>{try{res.json(await AssistanceRequest.find({userId:req.user._id}).sort({createdAt:-1}));}catch(e){res.status(500).json({message:e.message});}});
+router.get('/',auth,role('admin'),async(req,res)=>{try{res.json(await AssistanceRequest.find().populate('userId','name email phone').sort({createdAt:-1}));}catch(e){res.status(500).json({message:e.message});}});
+router.patch('/:id/cancel',auth,role('senior'),async(req,res)=>{try{const r=await AssistanceRequest.findOneAndUpdate({_id:req.params.id,userId:req.user._id,status:'Pending'},{status:'Cancelled'},{new:true});if(!r)return res.status(404).json({message:'Request cannot be cancelled'});res.json(r);}catch(e){res.status(400).json({message:e.message});}});
+router.patch('/:id/assign',auth,role('admin'),async(req,res)=>{try{const {volunteerName,volunteerPhone}=req.body;if(!volunteerName||!volunteerPhone)return res.status(400).json({message:'Volunteer name and phone are required'});const r=await AssistanceRequest.findByIdAndUpdate(req.params.id,{volunteerName,volunteerPhone,status:'In Progress'},{new:true});if(!r)return res.status(404).json({message:'Request not found'});res.json(r);}catch(e){res.status(400).json({message:e.message});}});
+router.patch('/:id/status',auth,role('admin'),async(req,res)=>{try{const allowed=['Pending','In Progress','Completed','Cancelled'];if(!allowed.includes(req.body.status))return res.status(400).json({message:'Invalid status'});const r=await AssistanceRequest.findByIdAndUpdate(req.params.id,{status:req.body.status},{new:true});if(!r)return res.status(404).json({message:'Request not found'});res.json(r);}catch(e){res.status(400).json({message:e.message});}});
+export default router;
